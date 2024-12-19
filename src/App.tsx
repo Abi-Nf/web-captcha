@@ -19,7 +19,6 @@ export function App() {
 
   const { register, handleSubmit, formState } = useForm<Form>();
   const [messages, setMessage] = useState<number[]>([]);
-  const [shouldCaptcha, setShouldRenderCaptcha] = useState(false);
   const [last_stop, setStop] = useState(0);
 
   const sendWhoami = async (i: number) => {
@@ -39,7 +38,6 @@ export function App() {
   const displayCaptcha = () => {
     renderCaptcha(ref.current!, import.meta.env.VITE_API_KEY, {
       onSuccess: async () => {
-        setShouldRenderCaptcha(false);
         await sendRequests(last_stop);
       }
     });
@@ -53,7 +51,6 @@ export function App() {
         .catch((error: AxiosError) => {
           if (error.status === 405){
             displayCaptcha();
-            setShouldRenderCaptcha(true);
             setStop(i);
             clearInterval(interval);
           }
@@ -73,21 +70,20 @@ export function App() {
   return (
     <div>
       {
-        !shouldCaptcha ? (
-          formState.isSubmitSuccessful
-            ? messages.map(v => <div key={v}>{v}. Forbidden</div>)
-            : (
-              <form onSubmit={handleSubmit(submitCount)}>
-                <input {...register(
-                  'num',
-                  { required: true, valueAsNumber: true }
-                  )}
-                />
-                <button type="submit">Submit</button>
-              </form>
-            )
-        ) : <div id="captcha_container" ref={ref}></div>
+        formState.isSubmitSuccessful
+          ? messages.map(v => <div key={v}>{v}. Forbidden</div>)
+          : (
+            <form onSubmit={handleSubmit(submitCount)}>
+              <input {...register(
+                'num',
+                { required: true, valueAsNumber: true }
+                )}
+              />
+              <button type="submit">Submit</button>
+            </form>
+          )
       }
+      <div id="captcha_container" ref={ref}></div>
     </div>
   );
 }
