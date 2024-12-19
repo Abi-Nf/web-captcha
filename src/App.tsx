@@ -50,8 +50,8 @@ export function App() {
       sendWhoami(i)
         .catch((error: AxiosError) => {
           if (error.status === 405){
-            displayCaptcha();
             setStop(i);
+            displayCaptcha();
             clearInterval(interval);
           }
         });
