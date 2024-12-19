@@ -37,11 +37,14 @@ export function App() {
   }
 
   const displayCaptcha = () => {
+    const restartFetch = () => {
+      setDisplayCaptcha(false);
+      sendRequests(last_stop);
+    };
+
     renderCaptcha(ref.current!, import.meta.env.VITE_API_KEY, {
-      onSuccess: async () => {
-        setDisplayCaptcha(false);
-        await sendRequests(last_stop);
-      }
+      onSuccess: restartFetch,
+      onPuzzleCorrect: restartFetch
     });
   }
 
