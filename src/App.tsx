@@ -36,11 +36,10 @@ export function App() {
     }
   }
 
-  const displayCaptcha = () => {
+  const displayCaptcha = (start: number) => {
     const restartFetch = () => {
-      console.log('restart fetch ' + last_stop);
       setDisplayCaptcha(false);
-      sendRequests(last_stop);
+      sendRequests(start);
     };
 
     renderCaptcha(ref.current!, import.meta.env.VITE_API_KEY, {
@@ -56,9 +55,9 @@ export function App() {
       sendWhoami(i)
         .catch((error: AxiosError) => {
           if (error.status === 405){
-            setStop(i);
             setDisplayCaptcha(true);
-            displayCaptcha();
+            displayCaptcha(i);
+            setStop(i);
             clearInterval(interval);
           }
         });
