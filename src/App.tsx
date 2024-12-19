@@ -16,6 +16,7 @@ export function App() {
   useScriptLoader(import.meta.env.VITE_INTEGRATION_URL);
 
   const ref = useRef<HTMLDivElement | null>(null);
+  const [isCaptchaDisplay, setDisplayCaptcha] = useState(false);
 
   const { register, handleSubmit, formState } = useForm<Form>();
   const [messages, setMessage] = useState<number[]>([]);
@@ -38,6 +39,7 @@ export function App() {
   const displayCaptcha = () => {
     renderCaptcha(ref.current!, import.meta.env.VITE_API_KEY, {
       onSuccess: async () => {
+        setDisplayCaptcha(false);
         await sendRequests(last_stop);
       }
     });
@@ -51,6 +53,7 @@ export function App() {
         .catch((error: AxiosError) => {
           if (error.status === 405){
             setStop(i);
+            setDisplayCaptcha(true);
             displayCaptcha();
             clearInterval(interval);
           }
@@ -70,9 +73,7 @@ export function App() {
   return (
     <div>
       {
-        formState.isSubmitSuccessful
-          ? messages.map(v => <div key={v}>{v}. Forbidden</div>)
-          : (
+        !formState.isSubmitSuccessful && (
             <form onSubmit={handleSubmit(submitCount)}>
               <input {...register(
                 'num',
@@ -82,6 +83,9 @@ export function App() {
               <button type="submit">Submit</button>
             </form>
           )
+      }
+      {
+        !isCaptchaDisplay && messages.map(v => <div key={v}>{v}. Forbidden</div>)
       }
       <div id="captcha_container" ref={ref}></div>
     </div>
