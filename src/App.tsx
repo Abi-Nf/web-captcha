@@ -38,6 +38,7 @@ export function App() {
 
   const displayCaptcha = () => {
     const restartFetch = () => {
+      console.log('restart fetch ' + last_stop);
       setDisplayCaptcha(false);
       sendRequests(last_stop);
     };
