@@ -2,11 +2,13 @@ import axios, { AxiosError } from 'axios';
 import { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useScriptLoader } from './hook/captcha';
-import { renderCaptcha } from './lib/captcha';
+import { renderCaptcha, RendererCaptchaOptions } from './lib/captcha';
 
 const client = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
 });
+
+const getWhoami = () => client.get('/whoami');
 
 const REQUEST_LIMIT= 1000;
 
@@ -18,55 +20,54 @@ export function App() {
   useScriptLoader(import.meta.env.VITE_INTEGRATION_URL);
 
   const ref = useRef<HTMLDivElement | null>(null);
-  const [isCaptchaDisplay, setDisplayCaptcha] = useState(false);
-
   const { register, handleSubmit, formState } = useForm<Form>();
-  const [messages, setMessage] = useState<number[]>([]);
-  const [last_stop, setStop] = useState(0);
+  const [forbiddenCount, setForbiddenCount] = useState(0);
+  const [captchaDisplay, setCaptchaDisplay] = useState(false);
 
-  const sendWhoami = async (i: number) => {
-    try {
-      const response = await client.get('/whoami');
-      console.log(response);
-    } catch (e) {
-      const error = e as AxiosError;
-      if (error.status === 403) {
-        setMessage((prev) => prev.concat(i));
-      } else {
-        throw e;
-      }
+  const displayCaptcha = (options?: RendererCaptchaOptions) => {
+    if(!ref.current) return;
+    if(ref.current.children.length == 0){
+      const subContainer = document.createElement("div");
+      ref.current.appendChild(subContainer);
+      renderCaptcha(subContainer, import.meta.env.VITE_API_KEY, options);
+      setCaptchaDisplay(true);
     }
-  };
+  }
 
-  const displayCaptcha = (start: number) => {
-    const restartFetch = () => {
-      setDisplayCaptcha(false);
-      sendRequests(start);
-    };
-
-    renderCaptcha(ref.current!, import.meta.env.VITE_API_KEY, {
-      onSuccess: restartFetch,
-      onPuzzleCorrect: restartFetch,
-    });
-  };
+  const removeCaptcha = () => {
+    if(!ref.current || ref.current.children.length === 0) return;
+    ref.current.children.item(0)?.remove();
+    setCaptchaDisplay(false);
+  }
 
   const sendRequests = async (total: number) => {
     if (total <= 0 || total > REQUEST_LIMIT) return;
-    let i = last_stop;
     const interval = setInterval(() => {
-      sendWhoami(i).catch((error: AxiosError) => {
-        if (error.status === 405) {
-          setDisplayCaptcha(true);
-          displayCaptcha(i);
-          setStop(i);
-          clearInterval(interval);
-        }
-      });
-      if (i >= total) {
+      if(forbiddenCount >= total){
         clearInterval(interval);
         return;
       }
-      i++;
+
+      getWhoami()
+        .catch((error: AxiosError) => {
+          switch (error.status) {
+            case 403: {
+              setForbiddenCount(prev => prev + 1);
+              break;
+            }
+            case 405: {
+              clearInterval(interval);
+              const resetRequests = () => {
+                removeCaptcha();
+                const remainingRequest = total - forbiddenCount;
+                sendRequests(remainingRequest);
+              }
+              displayCaptcha({ onSuccess: resetRequests });
+              break;
+            }
+            default: throw error;
+          }
+        })
     }, 1000);
   };
 
@@ -80,11 +81,23 @@ export function App() {
             placeholder="Enter request count"
             {...register('num', { required: true, valueAsNumber: true })}
           />
-          <button type="submit">Submit</button>
+          <button type="submit">
+            Submit
+          </button>
         </form>
       )}
-      {!isCaptchaDisplay && messages.map((v) => <div key={v}>{v}. Forbidden</div>)}
-      <div id="captcha_container" ref={ref}></div>
+
+      {
+        !captchaDisplay && Array(forbiddenCount)
+          .fill('Forbidden')
+          .map((msg, i) => <div key={i}>{i}. {msg}</div>)
+      }
+
+      <div
+        ref={ref}
+        id="captcha_container"
+        style={captchaDisplay ? undefined : { display: 'none' }}
+      ></div>
     </div>
   );
 }
