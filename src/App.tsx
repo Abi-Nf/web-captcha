@@ -8,6 +8,8 @@ const client = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
 });
 
+const REQUEST_LIMIT= 1000;
+
 export type Form = {
   num: number;
 };
@@ -49,7 +51,7 @@ export function App() {
   };
 
   const sendRequests = async (total: number) => {
-    if (total <= 0 || total > 1000) return;
+    if (total <= 0 || total > REQUEST_LIMIT) return;
     let i = last_stop;
     const interval = setInterval(() => {
       sendWhoami(i).catch((error: AxiosError) => {
