@@ -68,14 +68,12 @@ export function App() {
     }, 1000);
   };
 
-  const submitCount = async (form: Form) => {
-    return sendRequests(form.num);
-  };
+  const submitRequestCount = (form: Form) => sendRequests(form.num);
 
   return (
     <div>
       {!formState.isSubmitSuccessful && (
-        <form onSubmit={handleSubmit(submitCount)}>
+        <form onSubmit={handleSubmit(submitRequestCount)}>
           <input
             placeholder="Enter request count"
             {...register('num', { required: true, valueAsNumber: true })}
