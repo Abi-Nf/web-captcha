@@ -1,8 +1,5 @@
 import { useEffect, useState } from 'react';
-import {
-  loadScript,
-  removeScript,
-} from '../lib/captcha';
+import { loadScript, removeScript } from '../lib/captcha';
 
 export function useScriptLoader(integration_url: string) {
   const [error, setError] = useState<Error | null>(null);
