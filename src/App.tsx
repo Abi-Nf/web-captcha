@@ -78,11 +78,7 @@ export function App() {
       {
         !formState.isSubmitSuccessful && (
             <form onSubmit={handleSubmit(submitCount)}>
-              <input {...register(
-                'num',
-                { required: true, valueAsNumber: true }
-                )}
-              />
+              <input placeholder="Enter request count" {...register('num', { required: true, valueAsNumber: true })} />
               <button type="submit">Submit</button>
             </form>
           )
